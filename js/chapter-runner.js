@@ -82,10 +82,12 @@ window.ChapterRunner = (function() {
       return;
     }
 
-    // Check hash for direct topic navigation (e.g. #topic-3 or #summary)
+    // Check hash for direct topic navigation (e.g. #topic-3, #summary, or #hub)
     const hash = window.location.hash;
     if (hash === "#summary" || hash === "#chapter-test") {
       activeTopicIndex = "summary";
+    } else if (hash === "#hub" || hash === "#overview") {
+      activeTopicIndex = "hub";
     } else if (hash.startsWith("#topic-")) {
       const target = hash.replace("#topic-", "");
       const idx = currentChapter.topics.findIndex(t => t.id === target || t.number === target);
@@ -116,6 +118,15 @@ window.ChapterRunner = (function() {
     const totalTopics = currentChapter.topics ? currentChapter.topics.length : 0;
     const completedCount = getCompletedTopicsCount();
     const chapterPct = totalTopics === 0 ? 0 : Math.round((completedCount / totalTopics) * 100);
+
+    let activeContentHtml = "";
+    if (activeTopicIndex === "hub") {
+      activeContentHtml = renderChapterHubViewHTML();
+    } else if (activeTopicIndex === "summary") {
+      activeContentHtml = renderChapterSummaryViewHTML();
+    } else {
+      activeContentHtml = renderSingleTopicHTML(activeTopic, activeTopicIndex, totalTopics);
+    }
 
     let html = `
       <!-- Chapter Breadcrumb & Main Header (Section 44) -->
@@ -155,9 +166,9 @@ window.ChapterRunner = (function() {
       <!-- Topic Stepper / Selector Bar -->
       ${renderTopicStepperHTML(totalTopics)}
 
-      <!-- Active View: Topic Content OR Chapter Summary & Test -->
+      <!-- Active View: Topic Content OR Chapter Hub OR Chapter Summary & Test -->
       <div id="active-view-mount">
-        ${activeTopicIndex === "summary" ? renderChapterSummaryViewHTML() : renderSingleTopicHTML(activeTopic, activeTopicIndex, totalTopics)}
+        ${activeContentHtml}
       </div>
     `;
 
@@ -182,7 +193,16 @@ window.ChapterRunner = (function() {
     if (!currentChapter || !currentChapter.topics) return "";
     const s = window.CourseStorage ? window.CourseStorage.getState() : { completedTopics: {}, topicMastery: {} };
 
-    let buttons = "";
+    const isHubActive = activeTopicIndex === "hub";
+    let buttons = `
+      <button class="stepper-btn ${isHubActive ? 'active' : ''}"
+              onclick="ChapterRunner.switchTopic('hub')"
+              title="Chapter Hub Overview"
+              style="font-weight:800;border-right:1px solid var(--border-subtle);">
+        <span>📚 Hub</span>
+      </button>
+    `;
+
     currentChapter.topics.forEach((t, idx) => {
       const isCurrent = activeTopicIndex === idx;
       const isDone = s.completedTopics && s.completedTopics[t.id];
@@ -213,7 +233,7 @@ window.ChapterRunner = (function() {
 
     return `
       <div class="topic-stepper-wrap">
-        <span class="topic-stepper-label">Topics:</span>
+        <span class="topic-stepper-label">View:</span>
         ${buttons}
       </div>
     `;
@@ -225,6 +245,8 @@ window.ChapterRunner = (function() {
       window.location.hash = `topic-${currentChapter.topics[target].id}`;
     } else if (target === "summary") {
       window.location.hash = "summary";
+    } else if (target === "hub") {
+      window.location.hash = "hub";
     }
     renderView();
   }
@@ -275,8 +297,16 @@ window.ChapterRunner = (function() {
 
     return `
       <div class="card" style="padding:24px 28px;margin-bottom:24px;">
+        <!-- Breadcrumb back to Hub -->
+        <div class="topbar-title-crumb" style="margin-bottom:12px;font-size:12.5px;">
+          <a href="index.html">Home</a> <span>›</span>
+          <a href="learning-path.html">Chapters</a> <span>›</span>
+          <a href="javascript:void(0)" onclick="ChapterRunner.switchTopic('hub')">Chapter ${currentChapter.number} Hub</a> <span>›</span>
+          <span style="color:var(--text-primary);font-weight:700;">Topic ${topic.number}</span>
+        </div>
+
         <!-- A. Topic Header (Section 8) -->
-        <div style="border-bottom:1px solid var(--border-subtle);padding-bottom:16px;margin-bottom:20px;">
+        <div style="border-bottom:1px solid var(--border-subtle);padding-bottom:16px;margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
             <div>
               <div style="font-size:12px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:0.04em;">
@@ -308,31 +338,66 @@ window.ChapterRunner = (function() {
           </div>
         </div>
 
+        <!-- Table of Contents (On this page) -->
+        <div class="topic-toc">
+          <div class="topic-toc-header" onclick="ChapterRunner.toggleCollapsible('topic-toc-links')">
+            <span>📖 On this page (Quick Jump)</span>
+            <span style="font-size:12px;color:var(--primary);font-weight:700;">Jump to Section ▾</span>
+          </div>
+          <div class="topic-toc-links" id="topic-toc-links">
+            <a href="#section-concept" class="topic-toc-link">1. Core Explanation</a>
+            <a href="#section-key-idea" class="topic-toc-link">2. Key Principle</a>
+            <a href="#section-diagram" class="topic-toc-link">3. Chemical Diagram</a>
+            <a href="#section-examples" class="topic-toc-link">4. Worked Examples</a>
+            <a href="#section-mistake" class="topic-toc-link">5. Common Mistake</a>
+            <a href="#section-guided" class="topic-toc-link">6. Guided Practice</a>
+            <a href="#section-recap" class="topic-toc-link">7. Quick Recap</a>
+            <a href="#section-test" class="topic-toc-link">8. Topic Test</a>
+          </div>
+        </div>
+
         <!-- B. Teaching Explanation -->
-        <div class="teaching-narrative">
+        <div id="section-concept" class="teaching-narrative">
           ${narrativeHtml}
         </div>
 
         <!-- C. Key Idea Box -->
-        ${keyIdeaHtml}
+        <div id="section-key-idea">
+          ${keyIdeaHtml}
+        </div>
 
         <!-- D. Interactive Educational Chemical Diagram -->
-        ${diagramHtml}
+        <div id="section-diagram">
+          ${diagramHtml}
+        </div>
 
         <!-- E. Worked Examples -->
-        ${examplesHtml}
+        <div id="section-examples">
+          ${examplesHtml}
+        </div>
 
         <!-- E. Common Mistake Warning -->
-        ${mistakeHtml}
+        <div id="section-mistake">
+          ${mistakeHtml}
+        </div>
 
         <!-- F. Guided Practice (Try It) -->
-        ${guidedHtml}
+        <div id="section-guided">
+          ${guidedHtml}
+        </div>
 
         <!-- G. Quick Recap / Remember -->
-        ${recapHtml}
+        <div id="section-recap">
+          ${recapHtml}
+        </div>
 
         <!-- H. Topic Test (5 Questions) -->
-        ${testHtml}
+        <div id="section-test">
+          ${testHtml}
+        </div>
+
+        <!-- Related Topics Card -->
+        ${renderRelatedTopics(topic, index, totalTopics)}
 
         <!-- Sequential Navigation Footer -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:30px;border-top:1px solid var(--border-subtle);padding-top:16px;">
@@ -393,12 +458,10 @@ window.ChapterRunner = (function() {
     return html;
   }
 
-  // Key Idea Card
+  // Key Idea Card (Callout component)
   function renderKeyIdea(topic) {
-    // Generate a punchy key idea from title and lesson
     let keyIdeaText = "";
     if (topic.lesson && topic.lesson.formal) {
-      // First sentence of formal or summary of concept
       const firstSentence = topic.lesson.formal.split(". ")[0] + ".";
       keyIdeaText = firstSentence;
     } else {
@@ -406,9 +469,9 @@ window.ChapterRunner = (function() {
     }
 
     return `
-      <div class="key-idea-box">
-        <div class="key-idea-title">🔑 Core Principle</div>
-        <div class="key-idea-content">${formatChemistry(keyIdeaText)}</div>
+      <div class="callout callout-important">
+        <div class="callout-header">🔑 Core Principle</div>
+        <div style="font-weight:600;">${formatChemistry(keyIdeaText)}</div>
       </div>
     `;
   }
@@ -462,7 +525,7 @@ window.ChapterRunner = (function() {
     return html;
   }
 
-  // Common Mistake Warning
+  // Common Mistake Warning (Callout component)
   function renderCommonMistake(topic) {
     let mistakeText = "";
     if (topic.examples && topic.examples[0] && topic.examples[0].commonMistake) {
@@ -474,9 +537,9 @@ window.ChapterRunner = (function() {
     if (!mistakeText) return "";
 
     return `
-      <div class="common-mistake-box">
-        <div class="common-mistake-title">⚠️ Common Student Mistake</div>
-        <div class="common-mistake-content">
+      <div class="callout callout-common-mistake">
+        <div class="callout-header">⚠️ Common Student Mistake to Avoid</div>
+        <div>
           ${formatChemistry(mistakeText)}
         </div>
       </div>
@@ -787,6 +850,237 @@ window.ChapterRunner = (function() {
     }
   }
 
+  // RELATED TOPICS & STUDY CONNECTIONS
+  function renderRelatedTopics(topic, index, totalTopics) {
+    const ch = currentChapter;
+    let links = [];
+
+    if (index > 0 && ch.topics && ch.topics[index - 1]) {
+      links.push(`
+        <a href="javascript:void(0)" onclick="ChapterRunner.switchTopic(${index - 1})" class="related-topic-btn">
+          <span style="font-size:11px;color:var(--text-muted);font-weight:700;">PREVIOUS TOPIC</span>
+          <span style="font-weight:700;font-size:13px;color:var(--text-primary);margin-top:2px;">
+            ${ch.topics[index - 1].number} ${ch.topics[index - 1].title}
+          </span>
+        </a>
+      `);
+    }
+
+    if (index < totalTopics - 1 && ch.topics && ch.topics[index + 1]) {
+      links.push(`
+        <a href="javascript:void(0)" onclick="ChapterRunner.switchTopic(${index + 1})" class="related-topic-btn">
+          <span style="font-size:11px;color:var(--primary);font-weight:700;">NEXT LOGICAL CONCEPT</span>
+          <span style="font-weight:700;font-size:13px;color:var(--text-primary);margin-top:2px;">
+            ${ch.topics[index + 1].number} ${ch.topics[index + 1].title}
+          </span>
+        </a>
+      `);
+    }
+
+    links.push(`
+      <a href="practice.html?ch=${ch.number}" class="related-topic-btn">
+        <span style="font-size:11px;color:var(--purple);font-weight:700;">CHAPTER PRACTICE</span>
+        <span style="font-weight:700;font-size:13px;color:var(--text-primary);margin-top:2px;">
+          🎯 Practice Topic Problems
+        </span>
+      </a>
+    `);
+
+    links.push(`
+      <a href="pyqs.html?ch=${ch.number}" class="related-topic-btn">
+        <span style="font-size:11px;color:var(--warning);font-weight:700;">JEE MAIN PYQS</span>
+        <span style="font-weight:700;font-size:13px;color:var(--text-primary);margin-top:2px;">
+          ⭐ Exam Questions (2019–2024)
+        </span>
+      </a>
+    `);
+
+    links.push(`
+      <a href="revision.html" class="related-topic-btn">
+        <span style="font-size:11px;color:var(--success);font-weight:700;">QUICK RECALL</span>
+        <span style="font-weight:700;font-size:13px;color:var(--text-primary);margin-top:2px;">
+          🔄 Spaced Revision Sheet
+        </span>
+      </a>
+    `);
+
+    return `
+      <div class="related-topics-card">
+        <h4 style="font-size:15px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+          <span>🔗</span> Related Topics & Study Connections
+        </h4>
+        <div class="related-topics-grid">
+          ${links.join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  // CHAPTER HUB LANDING PAGE (JEENotes-inspired)
+  function renderChapterHubViewHTML() {
+    const ch = currentChapter;
+    const totalTopics = ch.topics ? ch.topics.length : 0;
+    const completedCount = getCompletedTopicsCount();
+    const chapterPct = totalTopics === 0 ? 0 : Math.round((completedCount / totalTopics) * 100);
+    const s = window.CourseStorage ? window.CourseStorage.getState() : { completedTopics: {}, topicMastery: {} };
+
+    let firstIncompleteIdx = 0;
+    if (ch.topics) {
+      const idx = ch.topics.findIndex(t => !s.completedTopics || !s.completedTopics[t.id]);
+      if (idx >= 0) firstIncompleteIdx = idx;
+    }
+
+    let topicsListHtml = "";
+    if (ch.topics) {
+      ch.topics.forEach((t, idx) => {
+        const isDone = s.completedTopics && s.completedTopics[t.id];
+        const mastery = s.topicMastery ? s.topicMastery[t.id] : null;
+        const isNext = idx === firstIncompleteIdx && !isDone;
+
+        let iconClass = "topic-state-unstarted";
+        let iconContent = "○";
+        let statusBadge = `<span style="font-size:12px;color:var(--text-muted);">Unstarted</span>`;
+
+        if (isDone) {
+          iconClass = "topic-state-done";
+          iconContent = "✓";
+          const pct = mastery ? mastery.pct : 100;
+          statusBadge = `<span class="badge badge-vhigh">✓ Mastered (${pct}%)</span>`;
+        } else if (isNext) {
+          iconClass = "topic-state-next";
+          iconContent = "→";
+          statusBadge = `<span class="badge badge-med">Next Up</span>`;
+        }
+
+        topicsListHtml += `
+          <div class="chapter-topic-row" onclick="ChapterRunner.switchTopic(${idx})" style="cursor:pointer;">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div class="topic-state-icon ${iconClass}">
+                ${iconContent}
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:14.5px;color:var(--text-primary);">
+                  ${t.number} ${t.title}
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                  ${t.whyMatters ? t.whyMatters : (t.lesson && t.lesson.simple ? t.lesson.simple.substring(0, 95) + '...' : '')}
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              ${statusBadge}
+              <button class="btn-secondary" style="padding:6px 12px;font-size:12px;">
+                ${isDone ? 'Review' : (isNext ? 'Resume →' : 'Start →')}
+              </button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    let reactionMapHtml = "";
+    if (ch.number >= 1) {
+      reactionMapHtml = `
+        <div class="reaction-map-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h4 style="font-size:15px;font-weight:800;color:var(--text-primary);">🗺️ Reaction & Transformation Network</h4>
+            <a href="reactions.html" class="btn-secondary" style="padding:4px 10px;font-size:11.5px;">All Named Reactions →</a>
+          </div>
+          <div class="reaction-map-tree">
+            <div class="reaction-map-branch" onclick="window.location.href='reactions.html'">
+              <strong>Hydrocarbons / Substrates</strong>
+              <span style="color:var(--text-muted);">──(Free Radical / Electrophilic Addition)──→</span>
+              <span style="color:var(--primary);font-weight:700;">Haloalkanes (R–X)</span>
+            </div>
+            <div class="reaction-map-branch" onclick="window.location.href='reactions.html'">
+              <strong>Haloalkanes (R–X)</strong>
+              <span style="color:var(--text-muted);">──(Nucleophilic Substitution S<sub>N</sub>2 / S<sub>N</sub>1)──→</span>
+              <span style="color:var(--success);font-weight:700;">Alcohols (R–OH)</span>
+            </div>
+            <div class="reaction-map-branch" onclick="window.location.href='reactions.html'">
+              <strong>Alcohols (R–OH)</strong>
+              <span style="color:var(--text-muted);">──(Oxidation with PCC / CrO₃ / KMnO₄)──→</span>
+              <span style="color:var(--purple);font-weight:700;">Carbonyls (R–CHO / R₂C=O)</span>
+            </div>
+            <div class="reaction-map-branch" onclick="window.location.href='reactions.html'">
+              <strong>Carbonyls</strong>
+              <span style="color:var(--text-muted);">──(Nucleophilic Addition / Aldol Condensation)──→</span>
+              <span style="color:var(--warning);font-weight:700;">Enones / Carboxylic Acids</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="chapter-hub-hero">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+          <div style="max-width:650px;">
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <span class="badge badge-vhigh">Chapter ${ch.number} Hub</span>
+              <span class="badge badge-ncert">${ch.ncert || 'JEE Main'}</span>
+            </div>
+            <h2 style="font-size:26px;font-weight:800;color:var(--text-primary);letter-spacing:-0.02em;">
+              ${ch.title}
+            </h2>
+            <p style="font-size:15px;color:var(--text-secondary);margin-top:8px;line-height:1.55;">
+              ${ch.subtitle || ch.whyImportant || 'Master the complete step-by-step conceptual foundations to exam-level problems.'}
+            </p>
+            <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+              <button class="btn-primary" onclick="ChapterRunner.switchTopic(${firstIncompleteIdx})" style="padding:10px 18px;font-size:14px;">
+                ▶ ${completedCount > 0 ? 'Resume Topic ' + (ch.topics && ch.topics[firstIncompleteIdx] ? ch.topics[firstIncompleteIdx].number : '0.1') : 'Start Chapter Learning'}
+              </button>
+              <a href="practice.html?ch=${ch.number}" class="btn-secondary" style="padding:10px 16px;font-size:14px;">
+                🎯 Chapter Practice
+              </a>
+              <a href="pyqs.html?ch=${ch.number}" class="btn-secondary" style="padding:10px 16px;font-size:14px;">
+                ⭐ JEE Main PYQs
+              </a>
+              <button class="btn-secondary" onclick="ChapterRunner.switchTopic('summary')" style="padding:10px 16px;font-size:14px;">
+                🏁 Chapter Test Simulator
+              </button>
+            </div>
+          </div>
+
+          <div style="background:var(--bg-card);padding:20px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);min-width:220px;text-align:center;">
+            <div style="font-size:12px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">
+              Chapter Completion
+            </div>
+            <div style="font-size:32px;font-weight:800;color:var(--primary);margin:6px 0;">
+              ${chapterPct}%
+            </div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">
+              ${completedCount} of ${totalTopics} Topics Completed
+            </div>
+            <div class="progress-bar-container" style="height:8px;margin:0 auto 12px auto;">
+              <div class="progress-bar-fill" style="width:${chapterPct}%;"></div>
+            </div>
+            <a href="revision.html" class="btn-secondary" style="font-size:12px;padding:6px 12px;display:block;">
+              🔄 Quick Revision Sheet
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chemical Reaction Network (For Reaction Chapters) -->
+      ${reactionMapHtml}
+
+      <!-- Topic Matrix -->
+      <div class="card" style="padding:22px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <h3 style="font-size:18px;font-weight:800;color:var(--text-primary);">Chapter Topics (${totalTopics})</h3>
+            <p style="font-size:13px;color:var(--text-muted);">Study every topic in sequence to build zero-gap conceptual understanding.</p>
+          </div>
+          <span style="font-size:12.5px;color:var(--text-muted);font-weight:600;">Ordered by prerequisite</span>
+        </div>
+        <div>
+          ${topicsListHtml}
+        </div>
+      </div>
+    `;
+  }
+
   // CHAPTER SUMMARY & TEST VIEW
   function renderChapterSummaryViewHTML() {
     const ch = currentChapter;
@@ -815,11 +1109,9 @@ window.ChapterRunner = (function() {
 
         <!-- Important Rules & Formulas -->
         ${ch.summary && ch.summary.importantRules ? `
-          <div style="margin-bottom:24px;background:var(--warning-subtle);border:1px solid var(--warning-border);border-left:4px solid var(--warning);padding:14px 18px;border-radius:var(--radius-sm);">
-            <h4 style="font-size:14px;font-weight:800;color:var(--warning);text-transform:uppercase;margin-bottom:8px;">
-              Important Rules & Formulas
-            </h4>
-            <ul style="margin-left:18px;font-size:13.5px;color:var(--text-primary);line-height:1.65;">
+          <div class="callout callout-warning" style="margin-bottom:24px;">
+            <div class="callout-header">⚠️ Important Rules & Formulas</div>
+            <ul style="margin-left:18px;font-size:13.5px;line-height:1.65;margin-top:6px;">
               ${ch.summary.importantRules.map(rule => `<li>${formatChemistry(rule)}</li>`).join("")}
             </ul>
           </div>
@@ -827,11 +1119,9 @@ window.ChapterRunner = (function() {
 
         <!-- Common Traps -->
         ${ch.summary && ch.summary.commonTraps ? `
-          <div style="margin-bottom:24px;background:var(--danger-subtle);border:1px solid var(--danger-border);border-left:4px solid var(--danger);padding:14px 18px;border-radius:var(--radius-sm);">
-            <h4 style="font-size:14px;font-weight:800;color:var(--danger);text-transform:uppercase;margin-bottom:8px;">
-              Common JEE Traps to Avoid
-            </h4>
-            <ul style="margin-left:18px;font-size:13.5px;color:var(--text-primary);line-height:1.65;">
+          <div class="callout callout-common-mistake" style="margin-bottom:24px;">
+            <div class="callout-header">🚫 Common JEE Traps to Avoid</div>
+            <ul style="margin-left:18px;font-size:13.5px;line-height:1.65;margin-top:6px;">
               ${ch.summary.commonTraps.map(trap => `<li>${formatChemistry(trap)}</li>`).join("")}
             </ul>
           </div>

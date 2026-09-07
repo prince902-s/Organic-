@@ -19,6 +19,7 @@ window.CourseStorage = (function() {
     completedChapters: {}, // chapterId -> { score, total, pct, date }
     questionAttempts: {}, // qId -> { chosen, isCorrect, timestamp, topicId, chapterId }
     mistakes: {}, // qId -> { questionObj, userChosen, correctChosen, timestamp, timesMissed }
+    mistakeNotebook: {},
     bookmarks: {
       topics: [],
       questions: [],
@@ -39,6 +40,7 @@ window.CourseStorage = (function() {
     },
     dailyGoalMinutes: 45,
     spacedReviews: {}, // topicId -> nextReviewDate (YYYY-MM-DD)
+    reviewsScheduled: {}, // topicId -> { topicTitle, intervalDays, nextReviewDate, lastReviewed }
     notes: {}, // id -> { text, timestamp, title }
     theme: "light"
   };
@@ -122,7 +124,15 @@ window.CourseStorage = (function() {
     else if (status === "strong") daysToAdd = 3;
     else if (status === "good") daysToAdd = 2;
     const reviewDate = new Date(now.getTime() + daysToAdd * 86400000).toISOString().split("T")[0];
+    if (!s.spacedReviews) s.spacedReviews = {};
+    if (!s.reviewsScheduled) s.reviewsScheduled = {};
     s.spacedReviews[topicId] = reviewDate;
+    s.reviewsScheduled[topicId] = {
+      topicTitle: topicTitle || `Topic ${topicNum || topicId}`,
+      intervalDays: daysToAdd,
+      nextReviewDate: reviewDate,
+      lastReviewed: Date.now()
+    };
 
     // Register streak activity
     s.streak.activityToday += 1;
@@ -137,33 +147,56 @@ window.CourseStorage = (function() {
 
   // Question Attempts & Mistakes Notebook
   function recordQuestionAttempt(qObj, chosenIdx, isCorrect, chapterId, topicId) {
+    if (!qObj) return;
     const s = getState();
-    s.questionAttempts[qObj.id] = {
+    if (!s.questionAttempts) s.questionAttempts = {};
+    if (!s.mistakes) s.mistakes = {};
+    if (!s.todayStats) s.todayStats = { questionsSolved: 0, correctCount: 0 };
+
+    const qId = qObj.id || (qObj.question ? "q_" + qObj.question.substring(0, 20).replace(/\W/g, "_") : "q_" + Date.now());
+
+    s.questionAttempts[qId] = {
       chosen: chosenIdx,
-      isCorrect,
+      isCorrect: !!isCorrect,
       timestamp: Date.now(),
-      chapterId,
-      topicId
+      chapterId: chapterId || qObj.chapterId || "",
+      topicId: topicId || qObj.topicId || ""
     };
 
     s.todayStats.questionsSolved += 1;
     if (isCorrect) {
       s.todayStats.correctCount += 1;
-      // If was in mistakes, remove it or reduce count
-      if (s.mistakes[qObj.id]) {
-        delete s.mistakes[qObj.id];
+      // If was in mistakes, remove it
+      if (s.mistakes[qId]) {
+        delete s.mistakes[qId];
+      }
+      if (s.mistakeNotebook && s.mistakeNotebook[qId]) {
+        delete s.mistakeNotebook[qId];
       }
     } else {
-      const prevMistake = s.mistakes[qObj.id];
-      s.mistakes[qObj.id] = {
+      const prevMistake = s.mistakes[qId] || (s.mistakeNotebook && s.mistakeNotebook[qId]);
+      const correctIdx = typeof qObj.answer !== "undefined" ? qObj.answer : (typeof qObj.correctAnswer !== "undefined" ? qObj.correctAnswer : 0);
+      const explanationText = qObj.explanation || (qObj.solution && qObj.solution.stepByStep ? qObj.solution.stepByStep : "");
+
+      const mistakeEntry = {
+        questionId: qId,
+        questionText: qObj.question || qObj.prompt || "Question on " + (topicId || chapterId || "Organic Chemistry"),
         questionObj: qObj,
+        lastUserAnswer: chosenIdx,
         userChosen: chosenIdx,
-        correctChosen: qObj.answer,
-        chapterId,
-        topicId,
+        correctAnswer: correctIdx,
+        correctChosen: correctIdx,
+        explanation: explanationText || "Review the underlying reaction conditions and mechanism rules to prevent this error.",
+        chapterId: chapterId || qObj.chapterId || "",
+        topicId: topicId || qObj.topicId || "",
+        firstMissedDate: prevMistake ? (prevMistake.firstMissedDate || prevMistake.timestamp) : Date.now(),
         timestamp: Date.now(),
-        timesMissed: (prevMistake ? prevMistake.timesMissed : 0) + 1
+        timesMissed: (prevMistake ? (prevMistake.timesMissed || 1) : 0) + 1
       };
+
+      s.mistakes[qId] = mistakeEntry;
+      if (!s.mistakeNotebook) s.mistakeNotebook = {};
+      s.mistakeNotebook[qId] = mistakeEntry;
     }
 
     if (s.todayStats.questionsSolved % 5 === 0) {
@@ -173,12 +206,76 @@ window.CourseStorage = (function() {
     saveState(s);
   }
 
+  function getMistakes() {
+    const s = getState();
+    const list = [];
+    const source = s.mistakes || s.mistakeNotebook || {};
+    Object.keys(source).forEach(qId => {
+      const entry = source[qId];
+      if (!entry) return;
+      const q = entry.questionObj || {};
+      const chosen = typeof entry.lastUserAnswer !== "undefined" ? entry.lastUserAnswer : (typeof entry.userChosen !== "undefined" ? entry.userChosen : -1);
+      const correct = typeof entry.correctAnswer !== "undefined" ? entry.correctAnswer : (typeof entry.correctChosen !== "undefined" ? entry.correctChosen : (typeof q.answer !== "undefined" ? q.answer : 0));
+      const exp = entry.explanation || q.explanation || (q.solution && q.solution.stepByStep ? q.solution.stepByStep : "") || "Review this topic to master the reaction rules.";
+      const qText = entry.questionText || q.question || q.prompt || `Question (${qId})`;
+
+      list.push({
+        questionId: qId,
+        questionText: qText,
+        questionObj: q,
+        lastUserAnswer: chosen,
+        userChosen: chosen,
+        correctAnswer: correct,
+        correctChosen: correct,
+        explanation: exp,
+        chapterId: entry.chapterId || q.chapterId || "",
+        topicId: entry.topicId || q.topicId || "",
+        timesMissed: entry.timesMissed || 1,
+        firstMissedDate: entry.firstMissedDate || entry.timestamp || Date.now(),
+        timestamp: entry.timestamp || Date.now()
+      });
+    });
+    list.sort((a, b) => b.timestamp - a.timestamp);
+    return list;
+  }
+
   function removeMistake(qId) {
     const s = getState();
-    if (s.mistakes[qId]) {
+    if (s.mistakes && s.mistakes[qId]) {
       delete s.mistakes[qId];
-      saveState(s);
     }
+    if (s.mistakeNotebook && s.mistakeNotebook[qId]) {
+      delete s.mistakeNotebook[qId];
+    }
+    saveState(s);
+  }
+
+  function clearMistakes() {
+    const s = getState();
+    s.mistakes = {};
+    s.mistakeNotebook = {};
+    saveState(s);
+  }
+
+  function scheduleNextReview(topicId, title = "") {
+    const s = getState();
+    if (!s.reviewsScheduled) s.reviewsScheduled = {};
+    if (!s.spacedReviews) s.spacedReviews = {};
+
+    const curr = s.reviewsScheduled[topicId] || { intervalDays: 1 };
+    const nextInterval = curr.intervalDays === 1 ? 3 : (curr.intervalDays === 3 ? 7 : (curr.intervalDays === 7 ? 14 : 30));
+    const nextDate = new Date(Date.now() + nextInterval * 86400000).toISOString().split("T")[0];
+
+    s.reviewsScheduled[topicId] = {
+      topicTitle: title || curr.topicTitle || topicId,
+      intervalDays: nextInterval,
+      nextReviewDate: nextDate,
+      lastReviewed: Date.now()
+    };
+    s.spacedReviews[topicId] = nextDate;
+    s.streak.activityToday += 1;
+    saveState(s);
+    return s.reviewsScheduled[topicId];
   }
 
   // Current Position
@@ -250,11 +347,21 @@ window.CourseStorage = (function() {
     // Spaced reviews due today
     const today = new Date().toISOString().split("T")[0];
     const reviewsDue = [];
-    Object.keys(s.spacedReviews).forEach(tId => {
-      if (s.spacedReviews[tId] <= today) {
-        reviewsDue.push(tId);
-      }
-    });
+    if (s.reviewsScheduled) {
+      Object.keys(s.reviewsScheduled).forEach(tId => {
+        const item = s.reviewsScheduled[tId];
+        if (item && item.nextReviewDate && item.nextReviewDate <= today) {
+          reviewsDue.push(tId);
+        }
+      });
+    }
+    if (s.spacedReviews) {
+      Object.keys(s.spacedReviews).forEach(tId => {
+        if (s.spacedReviews[tId] <= today && !reviewsDue.includes(tId)) {
+          reviewsDue.push(tId);
+        }
+      });
+    }
 
     return {
       overallPct,
@@ -342,7 +449,10 @@ window.CourseStorage = (function() {
     getTopicMastery,
     setTopicMastery,
     recordQuestionAttempt,
+    getMistakes,
     removeMistake,
+    clearMistakes,
+    scheduleNextReview,
     updateCurrentPosition,
     toggleBookmark,
     isBookmarked,

@@ -146,9 +146,14 @@
 
     function clearAllMastered() {
       if (confirm("Are you sure you want to clear your mistakes notebook?")) {
-        const s = window.CourseStorage.getState();
-        s.mistakeNotebook = {};
-        window.CourseStorage.saveState(s);
+        if (window.CourseStorage && window.CourseStorage.clearMistakes) {
+          window.CourseStorage.clearMistakes();
+        } else {
+          const s = window.CourseStorage.getState();
+          s.mistakes = {};
+          s.mistakeNotebook = {};
+          window.CourseStorage.saveState(s);
+        }
         renderMistakes();
       }
     }
