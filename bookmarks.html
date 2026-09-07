@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bookmarks — JEE Main Organic Chemistry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="desktop-sidebar" id="desktop-sidebar-mount"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title-crumb">
+            <a href="dashboard.html">Course</a> <span>›</span>
+            <span style="color:var(--text-primary);">Bookmarks</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="search-trigger-btn" onclick="App.openSearch()">
+            <span>🔍 Search curriculum</span>
+            <span class="kbd-shortcut">Ctrl K</span>
+          </button>
+          <div class="streak-pill">
+            <span>🔥</span>
+            <span id="topbar-streak-val">1 Day Streak</span>
+          </div>
+          <button class="btn-icon" onclick="App.toggleTheme()" title="Toggle Light/Dark Theme">🌓</button>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div style="margin-bottom:20px;">
+          <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;">
+            Saved Bookmarks
+          </h1>
+          <p style="font-size:14.5px;color:var(--text-muted);margin-top:4px;">
+            Quickly revisit tricky questions, reactions, and concepts you marked for later.
+          </p>
+        </div>
+
+        <div id="bookmarks-mount"></div>
+      </main>
+    </div>
+
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav-mount"></nav>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/curriculum-chapters-1-to-25.js"></script>
+  <script src="js/pyqs.js"></script>
+  <script src="js/reactions.js"></script>
+  <script src="js/reagents.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      App.init("bookmarks");
+      renderBookmarks();
+    });
+
+    function renderBookmarks() {
+      const box = document.getElementById("bookmarks-mount");
+      const state = window.CourseStorage.getState();
+      const bmarks = state.bookmarks || { questions: [], topics: [], reactions: [] };
+
+      const totalCount = (bmarks.questions ? bmarks.questions.length : 0) +
+                         (bmarks.reactions ? bmarks.reactions.length : 0);
+
+      if (totalCount === 0) {
+        box.innerHTML = `
+          <div class="card" style="text-align:center;padding:40px;color:var(--text-muted);">
+            <div style="font-size:36px;margin-bottom:8px;">🔖</div>
+            <h3 style="font-size:18px;font-weight:800;color:var(--text-primary);">No Bookmarks Saved Yet</h3>
+            <p style="font-size:13.5px;margin-top:6px;">
+              Click the star icon (☆) on any PYQ or Named Reaction to pin it to this page.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = "";
+
+      // Bookmarked Reactions
+      if (bmarks.reactions && bmarks.reactions.length > 0) {
+        html += `
+          <div class="card">
+            <h3 class="card-title">Bookmarked Named Reactions</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        `;
+        bmarks.reactions.forEach(rId => {
+          const rxn = window.CHEM_REACTIONS ? window.CHEM_REACTIONS.find(r => r.id === rId) : null;
+          if (rxn) {
+            html += `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-subtle);">
+                <div>
+                  <div style="font-weight:700;font-size:14.5px;">${rxn.name}</div>
+                  <div style="font-size:12px;color:var(--text-muted);">${rxn.chapter} • ${rxn.reagent}</div>
+                </div>
+                <a href="reactions.html#${rxn.id}" class="btn-secondary" style="font-size:12.5px;padding:4px 10px;">
+                  View Reaction →
+                </a>
+              </div>
+            `;
+          }
+        });
+        html += `</div></div>`;
+      }
+
+      // Bookmarked Questions
+      if (bmarks.questions && bmarks.questions.length > 0) {
+        html += `
+          <div class="card">
+            <h3 class="card-title">Bookmarked Questions & PYQs</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        `;
+        bmarks.questions.forEach(qId => {
+          const q = window.CHEM_PYQS ? window.CHEM_PYQS.QUESTIONS.find(item => item.id === qId) : null;
+          if (q) {
+            html += `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-subtle);">
+                <div style="max-width:75%;">
+                  <div style="font-weight:700;font-size:14px;">${q.question}</div>
+                  <div style="font-size:12px;color:var(--text-muted);">${q.chapterTitle} • ${q.year || ''}</div>
+                </div>
+                <a href="pyqs.html" class="btn-secondary" style="font-size:12.5px;padding:4px 10px;">
+                  Open PYQ Bank →
+                </a>
+              </div>
+            `;
+          }
+        });
+        html += `</div></div>`;
+      }
+
+      box.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mistake Notebook — JEE Main Organic Chemistry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="desktop-sidebar" id="desktop-sidebar-mount"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title-crumb">
+            <a href="dashboard.html">Course</a> <span>›</span>
+            <span style="color:var(--text-primary);">Mistake Notebook</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="search-trigger-btn" onclick="App.openSearch()">
+            <span>🔍 Search curriculum</span>
+            <span class="kbd-shortcut">Ctrl K</span>
+          </button>
+          <div class="streak-pill">
+            <span>🔥</span>
+            <span id="topbar-streak-val">1 Day Streak</span>
+          </div>
+          <button class="btn-icon" onclick="App.toggleTheme()" title="Toggle Light/Dark Theme">🌓</button>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div style="margin-bottom:20px;">
+          <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;">
+            Personal Mistake Notebook
+          </h1>
+          <p style="font-size:14.5px;color:var(--text-muted);margin-top:4px;">
+            Every question you miss across topic tests, chapter tests, PYQs, and practice drills is automatically documented here for diagnostic analysis.
+          </p>
+        </div>
+
+        <!-- Notebook Summary Card -->
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div>
+              <span id="mistake-count-badge" class="badge badge-vhigh" style="font-size:13px;padding:4px 10px;">0 Questions in Notebook</span>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn-secondary" style="font-size:13px;" onclick="retryAllMistakes()">Practice All Mistakes</button>
+              <button class="btn-secondary" style="font-size:13px;color:var(--danger);" onclick="clearAllMastered()">Clear Mastered</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mistakes List Mount -->
+        <div id="mistakes-list-container"></div>
+      </main>
+    </div>
+
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav-mount"></nav>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/curriculum-chapters-1-to-25.js"></script>
+  <script src="js/pyqs.js"></script>
+  <script src="js/reactions.js"></script>
+  <script src="js/reagents.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      App.init("mistakes");
+      renderMistakes();
+    });
+
+    function renderMistakes() {
+      const box = document.getElementById("mistakes-list-container");
+      const mistakes = window.CourseStorage.getMistakes();
+      const countBadge = document.getElementById("mistake-count-badge");
+
+      countBadge.textContent = `${mistakes.length} Questions in Notebook`;
+
+      if (mistakes.length === 0) {
+        box.innerHTML = `
+          <div class="card" style="text-align:center;padding:40px;color:var(--text-muted);">
+            <div style="font-size:36px;margin-bottom:8px;">🎉</div>
+            <h3 style="font-size:18px;font-weight:800;color:var(--text-primary);">Zero Mistakes in Notebook!</h3>
+            <p style="font-size:13.5px;max-width:450px;margin:6px auto 0 auto;">
+              Either you have answered every question correctly or haven't attempted any tests yet. When you miss any questions in chapter tests or practice, they will be archived here.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = "";
+      mistakes.forEach((m, idx) => {
+        const yourOpt = m.lastUserAnswer >= 0 ? String.fromCharCode(65 + m.lastUserAnswer) : "Unattempted";
+        const correctOpt = String.fromCharCode(65 + m.correctAnswer);
+
+        html += `
+          <div class="card" style="margin-bottom:16px;border-left:4px solid var(--danger);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+              <div>
+                <span class="badge badge-vhigh">Missed ${m.timesMissed} Time${m.timesMissed > 1 ? 's' : ''}</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">First logged: ${new Date(m.firstMissedDate).toLocaleDateString()}</span>
+              </div>
+              <button class="btn-secondary" style="font-size:12px;padding:4px 10px;" onclick="removeMistake('${m.questionId}')">
+                ✓ Mark Mastered & Remove
+              </button>
+            </div>
+
+            <div style="font-size:15px;font-weight:700;margin-bottom:12px;">
+              ${idx + 1}. ${m.questionText}
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+              <div style="padding:10px;background:var(--danger-subtle);border-radius:var(--radius-sm);font-size:13px;">
+                <span style="font-weight:700;color:var(--danger);">Your Answer:</span> Option ${yourOpt}
+              </div>
+              <div style="padding:10px;background:var(--success-subtle);border-radius:var(--radius-sm);font-size:13px;">
+                <span style="font-weight:700;color:var(--success);">Correct Answer:</span> Option ${correctOpt}
+              </div>
+            </div>
+
+            <div style="font-size:13px;color:var(--text-secondary);background:var(--bg-card-subtle);padding:12px;border-radius:var(--radius-sm);">
+              <strong>Explanation & Learning Point:</strong><br>${m.explanation}
+            </div>
+          </div>
+        `;
+      });
+
+      box.innerHTML = html;
+    }
+
+    function removeMistake(qId) {
+      window.CourseStorage.removeMistake(qId);
+      renderMistakes();
+    }
+
+    function clearAllMastered() {
+      if (confirm("Are you sure you want to clear your mistakes notebook?")) {
+        const s = window.CourseStorage.getState();
+        s.mistakeNotebook = {};
+        window.CourseStorage.saveState(s);
+        renderMistakes();
+      }
+    }
+
+    function retryAllMistakes() {
+      window.location.href = "practice.html?mode=weak";
+    }
+  </script>
+</body>
+</html>

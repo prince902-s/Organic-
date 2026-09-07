@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — JEE Main Organic Chemistry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="desktop-sidebar" id="desktop-sidebar-mount"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title-crumb">
+            <a href="dashboard.html">Course</a> <span>›</span>
+            <span style="color:var(--text-primary);">Settings & Preferences</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="search-trigger-btn" onclick="App.openSearch()">
+            <span>🔍 Search curriculum</span>
+            <span class="kbd-shortcut">Ctrl K</span>
+          </button>
+          <div class="streak-pill">
+            <span>🔥</span>
+            <span id="topbar-streak-val">1 Day Streak</span>
+          </div>
+          <button class="btn-icon" onclick="App.toggleTheme()" title="Toggle Light/Dark Theme">🌓</button>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div style="margin-bottom:20px;">
+          <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;">
+            Settings & Study Target
+          </h1>
+          <p style="font-size:14.5px;color:var(--text-muted);margin-top:4px;">
+            Configure your daily study targets, display appearance, and local progress data.
+          </p>
+        </div>
+
+        <!-- Daily Target Setting -->
+        <div class="card">
+          <h3 class="card-title">Daily Study Goal Target</h3>
+          <p class="card-subtitle" style="margin-bottom:14px;">Select how many minutes you plan to dedicate to Organic Chemistry each day.</p>
+          
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-secondary goal-btn" data-min="15" onclick="setDailyGoal(15)">15 min (Light)</button>
+            <button class="btn-secondary goal-btn" data-min="30" onclick="setDailyGoal(30)">30 min (Standard)</button>
+            <button class="btn-secondary goal-btn" data-min="45" onclick="setDailyGoal(45)">45 min (Recommended)</button>
+            <button class="btn-secondary goal-btn" data-min="60" onclick="setDailyGoal(60)">60 min (Intensive)</button>
+            <button class="btn-secondary goal-btn" data-min="90" onclick="setDailyGoal(90)">90 min (JEE Ranker)</button>
+          </div>
+        </div>
+
+        <!-- Display Theme -->
+        <div class="card">
+          <h3 class="card-title">Appearance & Color Theme</h3>
+          <p class="card-subtitle" style="margin-bottom:14px;">Toggle between high-contrast light mode and distraction-free dark study mode.</p>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-secondary" onclick="setThemeDirect('light')">☀️ Light Academic Mode</button>
+            <button class="btn-secondary" onclick="setThemeDirect('dark')">🌙 Night / Dark Mode</button>
+          </div>
+        </div>
+
+        <!-- Backup & Restore -->
+        <div class="card">
+          <h3 class="card-title">Data Backup & Restore</h3>
+          <p class="card-subtitle" style="margin-bottom:14px;">Download a JSON copy of your topic mastery, test results, and mistake notebook, or restore it on another device.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-primary" onclick="exportDataJSON()">Download Backup (.json)</button>
+            <label class="btn-secondary" style="cursor:pointer;display:inline-block;">
+              Restore From File
+              <input type="file" accept=".json" style="display:none;" onchange="importDataJSON(event)" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Danger Zone: Reset -->
+        <div class="card" style="border:1px solid var(--danger-border);background:var(--danger-subtle);">
+          <h3 style="font-size:17px;font-weight:800;color:var(--danger);margin-bottom:4px;">Danger Zone: Reset Progress</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">This will completely clear your completed topics, test scores, and mistake notebook.</p>
+          <button class="btn-secondary" style="color:var(--danger);border-color:var(--danger-border);" onclick="resetAllProgress()">
+            Reset All Course Progress
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav-mount"></nav>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/curriculum-chapters-1-to-25.js"></script>
+  <script src="js/pyqs.js"></script>
+  <script src="js/reactions.js"></script>
+  <script src="js/reagents.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      App.init("settings");
+      highlightCurrentGoal();
+    });
+
+    function highlightCurrentGoal() {
+      const state = window.CourseStorage.getState();
+      const current = state.dailyGoalMinutes || 45;
+      const buttons = document.querySelectorAll(".goal-btn");
+      buttons.forEach(btn => {
+        if (parseInt(btn.getAttribute("data-min")) === current) {
+          btn.className = "btn-primary goal-btn";
+        } else {
+          btn.className = "btn-secondary goal-btn";
+        }
+      });
+    }
+
+    function setDailyGoal(min) {
+      window.CourseStorage.setDailyGoalMinutes(min);
+      highlightCurrentGoal();
+      alert(`Daily study goal updated to ${min} minutes!`);
+    }
+
+    function setThemeDirect(t) {
+      document.documentElement.setAttribute("data-theme", t);
+      const s = window.CourseStorage.getState();
+      s.theme = t;
+      window.CourseStorage.saveState(s);
+    }
+
+    function exportDataJSON() {
+      const data = window.CourseStorage.exportData();
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `jee-organic-chem-backup-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importDataJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const ok = window.CourseStorage.importData(evt.target.result);
+        if (ok) {
+          alert("Progress restored successfully!");
+          window.location.reload();
+        } else {
+          alert("Invalid backup file format.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetAllProgress() {
+      if (confirm("Are you ABSOLUTELY sure you want to reset all course progress? This action cannot be undone.")) {
+        window.CourseStorage.resetAllData();
+        alert("Progress has been reset.");
+        window.location.href = "dashboard.html";
+      }
+    }
+  </script>
+</body>
+</html>

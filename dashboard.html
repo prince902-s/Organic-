@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard — JEE Main Organic Chemistry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="desktop-sidebar" id="desktop-sidebar-mount"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title-crumb">
+            <span style="color:var(--text-primary);">Student Dashboard</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="search-trigger-btn" onclick="App.openSearch()">
+            <span>🔍 Search curriculum</span>
+            <span class="kbd-shortcut">Ctrl K</span>
+          </button>
+          <div class="streak-pill">
+            <span>🔥</span>
+            <span id="topbar-streak-val">1 Day Streak</span>
+          </div>
+          <button class="btn-icon" onclick="App.toggleTheme()" title="Toggle Light/Dark Theme">🌓</button>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <!-- Current Position Primary CTA -->
+        <div class="card" style="padding:24px;border-left:4px solid var(--primary);background:linear-gradient(to right, var(--bg-card), var(--primary-subtle));">
+          <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.04em;">
+            Current Learning Position
+          </div>
+          <h2 id="pos-title" style="font-size:22px;font-weight:800;color:var(--text-primary);margin:4px 0 6px 0;">
+            Chapter 0 → Topic 0.1 → What Is Matter?
+          </h2>
+          <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
+            Pick up right where you left off in your structured sequence.
+          </p>
+          <a id="pos-btn" href="chapter-0.html#topic-ch00-topic01" class="btn-primary" style="padding:10px 22px;font-size:15px;">
+            Continue Learning →
+          </a>
+        </div>
+
+        <!-- Overall Course Progress Card -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 class="card-title" style="margin-bottom:0;">Overall Course Progress</h3>
+            <span id="overall-pct-badge" style="font-size:16px;font-weight:800;color:var(--primary);">0%</span>
+          </div>
+          <div class="progress-bar-container" style="height:10px;margin:12px 0 6px 0;">
+            <div id="overall-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);display:flex;justify-content:space-between;">
+            <span id="completed-topics-label">0 Topics Mastered</span>
+            <span>Complete JEE Main Syllabus (Ch 0–25)</span>
+          </div>
+        </div>
+
+        <!-- Today's Study Metrics Grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;margin-bottom:16px;">
+          <div class="card" style="margin-bottom:0;padding:16px;">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Today's Study Time</div>
+            <div id="metric-time" style="font-size:22px;font-weight:800;color:var(--primary);margin-top:4px;">14 min</div>
+            <div id="metric-goal-sub" style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Goal: 45 min</div>
+          </div>
+
+          <div class="card" style="margin-bottom:0;padding:16px;">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Topics Completed</div>
+            <div id="metric-topics" style="font-size:22px;font-weight:800;color:var(--success);margin-top:4px;">0</div>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Today's sessions</div>
+          </div>
+
+          <div class="card" style="margin-bottom:0;padding:16px;">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Questions Solved</div>
+            <div id="metric-qsolved" style="font-size:22px;font-weight:800;color:var(--text-primary);margin-top:4px;">0</div>
+            <div id="metric-acc" style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Accuracy: 0%</div>
+          </div>
+
+          <div class="card" style="margin-bottom:0;padding:16px;">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Daily Learning Streak</div>
+            <div id="metric-streak" style="font-size:22px;font-weight:800;color:var(--warning);margin-top:4px;">🔥 1 Day</div>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Active today</div>
+          </div>
+        </div>
+
+        <!-- Spaced Reviews Due Notice -->
+        <div id="spaced-review-card" class="card" style="display:none;background:var(--purple-subtle);border-color:var(--purple-border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div>
+              <div style="font-weight:800;font-size:15px;color:var(--purple);">⏰ Spaced Repetition Due Today</div>
+              <div id="spaced-review-text" style="font-size:13.5px;color:var(--text-secondary);margin-top:2px;">
+                You have topics scheduled for review to lock them into long-term memory.
+              </div>
+            </div>
+            <a href="revision.html" class="btn-primary" style="background:var(--purple);font-size:13px;">
+              Start Review Session →
+            </a>
+          </div>
+        </div>
+
+        <!-- Two Columns: Weak Areas & Quick Actions -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;">
+          <!-- Weak Areas -->
+          <div class="card" style="margin-bottom:0;">
+            <h3 class="card-title">Needs Attention (Weak Areas)</h3>
+            <p class="card-subtitle" style="margin-bottom:12px;">
+              Topics with mastery below 70% automatically flagged for targeted practice.
+            </p>
+            <div id="weak-areas-list">
+              <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13.5px;">
+                ✓ No weak areas flagged yet! Complete topic tests to generate personalized diagnostics.
+              </div>
+            </div>
+            <div style="margin-top:14px;text-align:right;">
+              <a href="practice.html?mode=weak" class="btn-secondary" style="font-size:13px;">
+                Practice Weak Areas →
+              </a>
+            </div>
+          </div>
+
+          <!-- Fast Links / Study Paths -->
+          <div class="card" style="margin-bottom:0;">
+            <h3 class="card-title">Quick Study Pathways</h3>
+            <p class="card-subtitle" style="margin-bottom:12px;">Direct access to your high-yield exam modules:</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <a href="pyqs.html" class="nav-item" style="border:1px solid var(--border-subtle);">
+                <span class="nav-icon">⭐</span>
+                <span>JEE Main Authentic PYQs (2020–2024)</span>
+                <span class="nav-badge">Filterable</span>
+              </a>
+              <a href="practice.html" class="nav-item" style="border:1px solid var(--border-subtle);">
+                <span class="nav-icon">🎯</span>
+                <span>Question Bank (Adaptive Practice)</span>
+                <span class="nav-badge">6 Modes</span>
+              </a>
+              <a href="reactions.html" class="nav-item" style="border:1px solid var(--border-subtle);">
+                <span class="nav-icon">🧪</span>
+                <span>Named Reactions & Mechanisms</span>
+                <span class="nav-badge">Full Library</span>
+              </a>
+              <a href="reagents.html" class="nav-item" style="border:1px solid var(--border-subtle);">
+                <span class="nav-icon">🔬</span>
+                <span>Reagents Master Reference</span>
+                <span class="nav-badge">Selective</span>
+              </a>
+              <a href="mistakes.html" class="nav-item" style="border:1px solid var(--border-subtle);">
+                <span class="nav-icon">📓</span>
+                <span>Mistakes Notebook</span>
+                <span class="nav-badge">Review</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav-mount"></nav>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/curriculum-chapters-1-to-25.js"></script>
+  <script src="js/pyqs.js"></script>
+  <script src="js/reactions.js"></script>
+  <script src="js/reagents.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      App.init("dashboard");
+      populateDashboard();
+    });
+
+    function populateDashboard() {
+      const stats = window.CourseStorage.getOverallStats();
+
+      // Current Position
+      const pos = stats.currentPosition;
+      document.getElementById("pos-title").textContent = `Chapter ${pos.chapterNum} → Topic ${pos.topicNum} → ${pos.title}`;
+      document.getElementById("pos-btn").href = `chapter-${pos.chapterNum}.html#topic-${pos.topicId}`;
+
+      // Overall Progress
+      document.getElementById("overall-pct-badge").textContent = `${stats.overallPct}%`;
+      document.getElementById("overall-bar-fill").style.width = `${stats.overallPct}%`;
+      document.getElementById("completed-topics-label").textContent = `${stats.completedTopicsCount} Topics Mastered`;
+
+      // Metrics
+      document.getElementById("metric-time").textContent = `${stats.today.studyMinutes} min`;
+      document.getElementById("metric-goal-sub").textContent = `Goal: ${stats.dailyGoalMinutes} min (${stats.today.studyMinutes >= stats.dailyGoalMinutes ? '✓ Met' : `${stats.dailyGoalMinutes - stats.today.studyMinutes}m left`})`;
+      document.getElementById("metric-topics").textContent = stats.today.topicsCompleted;
+      document.getElementById("metric-qsolved").textContent = stats.today.questionsSolved;
+      const accPct = stats.today.questionsSolved === 0 ? 0 : Math.round((stats.today.correctCount / stats.today.questionsSolved) * 100);
+      document.getElementById("metric-acc").textContent = `Accuracy: ${accPct}% (${stats.today.correctCount} correct)`;
+      document.getElementById("metric-streak").textContent = `🔥 ${stats.streakCount} Day${stats.streakCount > 1 ? 's' : ''}`;
+
+      // Spaced review card
+      if (stats.reviewsDueCount > 0) {
+        const rc = document.getElementById("spaced-review-card");
+        rc.style.display = "block";
+        document.getElementById("spaced-review-text").textContent = `${stats.reviewsDueCount} topic${stats.reviewsDueCount > 1 ? 's are' : ' is'} due for spaced repetition review today.`;
+      }
+
+      // Weak areas list
+      const weakContainer = document.getElementById("weak-areas-list");
+      if (stats.weakTopics && stats.weakTopics.length > 0) {
+        let html = "";
+        stats.weakTopics.forEach(wt => {
+          html += `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border-subtle);font-size:13px;">
+              <div>
+                <span style="font-weight:700;">Topic ${wt.topicNum}:</span> ${wt.topicTitle}
+              </div>
+              <span class="badge badge-vhigh">${wt.pct}%</span>
+            </div>
+          `;
+        });
+        weakContainer.innerHTML = html;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "JEE Main Organic Chemistry",
+  "description": "Complete structured Organic Chemistry learning, practice, chapter tests, PYQs, and revision platform for JEE Main from Class 10 foundation to exam readiness.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learning Path — JEE Main Organic Chemistry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="desktop-sidebar" id="desktop-sidebar-mount"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title-crumb">
+            <a href="dashboard.html">Course</a> <span>›</span>
+            <span style="color:var(--text-primary);">Interactive Learning Path</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="search-trigger-btn" onclick="App.openSearch()">
+            <span>🔍 Search curriculum</span>
+            <span class="kbd-shortcut">Ctrl K</span>
+          </button>
+          <div class="streak-pill">
+            <span>🔥</span>
+            <span id="topbar-streak-val">1 Day Streak</span>
+          </div>
+          <button class="btn-icon" onclick="App.toggleTheme()" title="Toggle Light/Dark Theme">🌓</button>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div style="margin-bottom:24px;">
+          <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;">
+            Complete Course Progression Map
+          </h1>
+          <p style="font-size:14.5px;color:var(--text-muted);margin-top:4px;">
+            The strictly ordered prerequisite chain. Every concept connects to what came before.
+          </p>
+        </div>
+
+        <!-- Visual Roadmap Tree Container -->
+        <div id="learning-path-tree" style="display:flex;flex-direction:column;gap:14px;max-width:750px;margin:0 auto;"></div>
+      </main>
+    </div>
+
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav-mount"></nav>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/curriculum-chapters-1-to-25.js"></script>
+  <script src="js/pyqs.js"></script>
+  <script src="js/reactions.js"></script>
+  <script src="js/reagents.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      App.init("learning-path");
+      renderLearningPath();
+    });
+
+    function renderLearningPath() {
+      const tree = document.getElementById("learning-path-tree");
+      if (!tree || !window.CHEM_CURRICULUM || !window.CHEM_CURRICULUM.CHAPTERS) return;
+
+      const state = window.CourseStorage.getState();
+      const currentChapterNum = state.currentPosition.chapterNum;
+      const chapters = window.CHEM_CURRICULUM.CHAPTERS;
+
+      let html = "";
+      chapters.forEach((ch, idx) => {
+        const isCurrent = ch.number === currentChapterNum;
+        const isCompleted = state.completedChapters[ch.id] !== undefined;
+        let totalTopics = ch.topics ? ch.topics.length : 1;
+        let completedTopicsInCh = 0;
+        if (ch.topics) {
+          ch.topics.forEach(t => {
+            if (state.completedTopics[t.id]) completedTopicsInCh += 1;
+          });
+        }
+        const pct = Math.round((completedTopicsInCh / totalTopics) * 100);
+
+        html += `
+          <div class="card" style="margin-bottom:0;position:relative;border-left:5px solid ${isCurrent ? 'var(--primary)' : (isCompleted ? 'var(--success)' : 'var(--border-subtle)')};">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:12px;font-weight:800;color:var(--text-muted);text-transform:uppercase;">
+                    STAGE ${Math.floor(ch.number / 3)} • CHAPTER ${ch.number}
+                  </span>
+                  ${isCurrent ? '<span class="badge badge-vhigh">● YOU ARE HERE</span>' : ''}
+                  ${isCompleted ? '<span class="badge badge-ncert">✓ COMPLETED</span>' : ''}
+                </div>
+                <h3 style="font-size:18px;font-weight:800;margin:4px 0 2px 0;">
+                  <a href="chapter-${ch.number}.html" style="color:var(--text-primary);text-decoration:none;">
+                    Chapter ${ch.number} — ${ch.title}
+                  </a>
+                </h3>
+                <div style="font-size:13px;color:var(--text-muted);">
+                  ${ch.ncert} • ${totalTopics} Topics • ${pct}% Mastered
+                </div>
+              </div>
+
+              <div>
+                <a href="chapter-${ch.number}.html" class="btn-${isCurrent ? 'primary' : 'secondary'}" style="font-size:13px;padding:6px 14px;">
+                  ${isCurrent ? 'Continue Learning →' : 'Open Chapter'}
+                </a>
+              </div>
+            </div>
+
+            <!-- Progress mini bar -->
+            <div class="progress-bar-container" style="height:6px;margin:10px 0 6px 0;">
+              <div class="progress-bar-fill" style="width:${pct}%;background:${isCompleted ? 'var(--success)' : 'var(--primary)'};"></div>
+            </div>
+          </div>
+        `;
+
+        // Draw connecting downward arrow except after last item
+        if (idx < chapters.length - 1) {
+          html += `
+            <div style="text-align:center;color:var(--text-light);font-size:16px;line-height:1;margin:-6px 0;">
+              ↓
+            </div>
+          `;
+        }
+      });
+
+      tree.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

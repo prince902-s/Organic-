@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Revision Hub — JEE Main Organic Chemistry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="desktop-sidebar" id="desktop-sidebar-mount"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title-crumb">
+            <a href="dashboard.html">Course</a> <span>›</span>
+            <span style="color:var(--text-primary);">Smart Revision Hub</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="search-trigger-btn" onclick="App.openSearch()">
+            <span>🔍 Search curriculum</span>
+            <span class="kbd-shortcut">Ctrl K</span>
+          </button>
+          <div class="streak-pill">
+            <span>🔥</span>
+            <span id="topbar-streak-val">1 Day Streak</span>
+          </div>
+          <button class="btn-icon" onclick="App.toggleTheme()" title="Toggle Light/Dark Theme">🌓</button>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div style="margin-bottom:20px;">
+          <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;">
+            Smart Revision & Active Recall
+          </h1>
+          <p style="font-size:14.5px;color:var(--text-muted);margin-top:4px;">
+            Harness scientifically scheduled spaced intervals (1, 3, 7, 14, 30 days) and high-yield active recall flashcards to beat the forgetting curve.
+          </p>
+        </div>
+
+        <!-- Spaced Repetition Due Today Queue -->
+        <div class="card" style="border-left:4px solid var(--purple);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h3 style="font-size:18px;font-weight:800;">Spaced Repetition Queue</h3>
+              <div style="font-size:13px;color:var(--text-muted);">Topics calculated for revision today based on forgetting curve algorithm.</div>
+            </div>
+            <span class="badge" style="background:var(--purple-subtle);color:var(--purple);font-weight:700;" id="rev-due-count">0 Due</span>
+          </div>
+          <div id="spaced-queue-list">
+            <div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13.5px;">
+              ✓ You are completely caught up with scheduled reviews! Complete more chapter topic tests to schedule automatic future intervals.
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Recall Flashcard Decks -->
+        <div class="card">
+          <h3 class="card-title">High-Yield Active Recall Flashcards</h3>
+          <p class="card-subtitle" style="margin-bottom:16px;">
+            Test your instant recognition of crucial reagents, stability hierarchies, and named reaction pathways.
+          </p>
+          
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;margin-bottom:20px;">
+            <button class="btn-secondary" style="padding:12px;text-align:left;" onclick="loadFlashcardDeck('reagents')">
+              <div style="font-weight:800;font-size:14px;">🧪 Reagents & Selectivity</div>
+              <div style="font-size:12px;color:var(--text-muted);">LiAlH₄ vs NaBH₄, PCC, Baeyer's</div>
+            </button>
+            <button class="btn-secondary" style="padding:12px;text-align:left;" onclick="loadFlashcardDeck('stability')">
+              <div style="font-weight:800;font-size:14px;">⚡ Stability Orders</div>
+              <div style="font-size:12px;color:var(--text-muted);">Carbocations, Carbanions, Radicals</div>
+            </button>
+            <button class="btn-secondary" style="padding:12px;text-align:left;" onclick="loadFlashcardDeck('acidity')">
+              <div style="font-weight:800;font-size:14px;">📉 Acidity & Basicity</div>
+              <div style="font-size:12px;color:var(--text-muted);">Substituted Phenols, Carboxylic acids</div>
+            </button>
+            <button class="btn-secondary" style="padding:12px;text-align:left;" onclick="loadFlashcardDeck('reactions')">
+              <div style="font-weight:800;font-size:14px;">🔬 Named Reactions</div>
+              <div style="font-size:12px;color:var(--text-muted);">Aldol, Cannizzaro, Sandmeyer, Reimer</div>
+            </button>
+          </div>
+
+          <!-- Flashcard Viewer Card -->
+          <div id="flashcard-box" style="background:var(--bg-card-subtle);border:2px solid var(--border-subtle);border-radius:var(--radius-md);padding:24px;min-height:180px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;cursor:pointer;" onclick="flipFlashcard()">
+            <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:8px;" id="fc-category">
+              Click to Flip
+            </div>
+            <div style="font-size:18px;font-weight:800;color:var(--text-primary);max-width:550px;" id="fc-text">
+              Select a deck above to begin flashcard recall.
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:12px;" id="fc-sub">
+              Tap anywhere on the card to flip Front / Back
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+            <button class="btn-secondary" onclick="prevFlashcard()">← Previous</button>
+            <span id="fc-counter" style="font-size:13px;font-weight:700;color:var(--text-muted);">0 / 0</span>
+            <button class="btn-primary" onclick="nextFlashcard()">Next Card →</button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav-mount"></nav>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/curriculum-chapters-1-to-25.js"></script>
+  <script src="js/pyqs.js"></script>
+  <script src="js/reactions.js"></script>
+  <script src="js/reagents.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      App.init("revision");
+      loadDueReviews();
+      loadFlashcardDeck('reagents');
+    });
+
+    function loadDueReviews() {
+      const stats = window.CourseStorage.getOverallStats();
+      const countEl = document.getElementById("rev-due-count");
+      const listEl = document.getElementById("spaced-queue-list");
+      if (!countEl || !listEl) return;
+
+      countEl.textContent = `${stats.reviewsDueCount} Due`;
+      if (stats.reviewsDueCount > 0) {
+        const s = window.CourseStorage.getState();
+        let html = "";
+        for (const [topicId, data] of Object.entries(s.reviewsScheduled)) {
+          if (new Date(data.nextReviewDate).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0)) {
+            html += `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--border-subtle);">
+                <div>
+                  <div style="font-weight:700;font-size:14px;">${data.topicTitle}</div>
+                  <div style="font-size:12px;color:var(--text-muted);">Interval Stage: Day ${data.intervalDays}</div>
+                </div>
+                <button class="btn-primary" style="font-size:12px;padding:4px 12px;" onclick="completeTopicReview('${topicId}', '${data.topicTitle}')">
+                  Mark Done & Advance
+                </button>
+              </div>
+            `;
+          }
+        }
+        listEl.innerHTML = html;
+      }
+    }
+
+    function completeTopicReview(topicId, title) {
+      window.CourseStorage.scheduleNextReview(topicId, title);
+      loadDueReviews();
+    }
+
+    // Flashcards Data
+    const DECKS = {
+      reagents: [
+        { front: "What does LiAlH₄ reduce?", back: "Reduces aldehydes, ketones, carboxylic acids, esters, acid chlorides, anhydrides, amides, nitriles, and nitro compounds down to alcohols/amines. Does NOT reduce non-conjugated C=C." },
+        { front: "What is NaBH₄ selective for?", back: "ONLY reduces Aldehydes, Ketones, and Acid Chlorides. Leaves Esters, Carboxylic Acids, and Amides completely untouched!" },
+        { front: "What is PCC (Pyridinium chlorochromate) used for?", back: "Selectively oxidizes Primary alcohols to Aldehydes (stops at RCHO without over-oxidizing to RCOOH) and Secondary alcohols to Ketones." },
+        { front: "What is the difference between Lindlar's Catalyst and Birch Reduction for alkynes?", back: "Lindlar's Catalyst (Pd/CaCO₃, quinoline) gives cis-alkene (syn addition). Birch Reduction (Na in liquid NH₃) gives trans-alkene (anti addition)." }
+      ],
+      stability: [
+        { front: "Carbocation Stability Order?", back: "3° > 2° > 1° > methyl. Governed by hyperconjugation (α-H count) and +I inductive effects. Benzylic/Allylic are stabilized by resonance." },
+        { front: "Carbanion Stability Order?", back: "Methyl > 1° > 2° > 3° (opposite of carbocation!). Extra alkyl groups destabilize via +I inductive electron donation." },
+        { front: "Free Radical Stability Order?", back: "3° > 2° > 1° > methyl (same as carbocations, governed by hyperconjugation and resonance)." },
+        { front: "Cyclooctatetraene (COT) Aromaticity?", back: "Non-aromatic! It adopts a non-planar 'tub' shape to escape antiaromaticity (8 π electrons)." }
+      ],
+      acidity: [
+        { front: "Effect of –NO₂ on Phenol Acidity?", back: "Strongly increases acidity (lowers pKa). Strong -M and -I effects stabilize the conjugate phenoxide anion, especially at ortho and para positions." },
+        { front: "Order of acidity: Phenol vs Alcohol vs Carboxylic Acid vs Water?", back: "Carboxylic Acid > Phenol > Water > Alcohol (Exception: Methanol CH₃OH is slightly more acidic than water)." },
+        { front: "Ortho Effect in Benzoic Acids?", back: "ANY ortho substituent (even electron-donating like –CH₃) increases the acidity of benzoic acid relative to benzoic acid due to steric hindrance and loss of coplanarity." }
+      ],
+      reactions: [
+        { front: "Reimer-Tiemann Reaction Reactants & Electrophile?", back: "Phenol + CHCl₃ + aq. NaOH. Active electrophile is neutral Dichlorocarbene (:CCl₂). Product is Salicylaldehyde." },
+        { front: "Kolbe-Schmitt Reaction Product?", back: "Phenol + NaOH → Sodium phenoxide + CO₂ (high pressure) → Salicylic acid (2-hydroxybenzoic acid)." },
+        { front: "Cannizzaro Reaction Condition?", back: "Aldehydes with NO α-hydrogen (e.g. HCHO, C₆H₅CHO) treated with concentrated (50%) NaOH. Undergoes self-redox to salt of acid + alcohol." },
+        { front: "Hoffmann Bromamide Degradation Key Feature?", back: "Primary amide + Br₂ + 4 NaOH → Primary amine with ONE LESS carbon atom. Migrating group retains stereochemical configuration." }
+      ]
+    };
+
+    let activeDeck = [];
+    let activeCardIndex = 0;
+    let isFlipped = false;
+
+    function loadFlashcardDeck(deckKey) {
+      activeDeck = DECKS[deckKey] || [];
+      activeCardIndex = 0;
+      isFlipped = false;
+      renderCurrentCard();
+    }
+
+    function renderCurrentCard() {
+      if (!activeDeck.length) return;
+      const card = activeDeck[activeCardIndex];
+      document.getElementById("fc-category").textContent = isFlipped ? "Answer / Explanation (Click to flip back)" : "Question / Concept (Click to flip)";
+      document.getElementById("fc-text").textContent = isFlipped ? card.back : card.front;
+      document.getElementById("fc-counter").textContent = `${activeCardIndex + 1} / ${activeDeck.length}`;
+      document.getElementById("flashcard-box").style.borderColor = isFlipped ? "var(--success-border)" : "var(--border-subtle)";
+    }
+
+    function flipFlashcard() {
+      isFlipped = !isFlipped;
+      renderCurrentCard();
+    }
+
+    function nextFlashcard() {
+      if (activeCardIndex < activeDeck.length - 1) {
+        activeCardIndex += 1;
+        isFlipped = false;
+        renderCurrentCard();
+      }
+    }
+
+    function prevFlashcard() {
+      if (activeCardIndex > 0) {
+        activeCardIndex -= 1;
+        isFlipped = false;
+        renderCurrentCard();
+      }
+    }
+  </script>
+</body>
+</html>

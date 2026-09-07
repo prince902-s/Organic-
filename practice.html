@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice Hub — JEE Main Organic Chemistry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="desktop-sidebar" id="desktop-sidebar-mount"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title-crumb">
+            <a href="dashboard.html">Course</a> <span>›</span>
+            <span style="color:var(--text-primary);">Adaptive Practice Hub</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="search-trigger-btn" onclick="App.openSearch()">
+            <span>🔍 Search curriculum</span>
+            <span class="kbd-shortcut">Ctrl K</span>
+          </button>
+          <div class="streak-pill">
+            <span>🔥</span>
+            <span id="topbar-streak-val">1 Day Streak</span>
+          </div>
+          <button class="btn-icon" onclick="App.toggleTheme()" title="Toggle Light/Dark Theme">🌓</button>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div style="margin-bottom:20px;">
+          <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;">
+            Practice Mode Selection
+          </h1>
+          <p style="font-size:14.5px;color:var(--text-muted);margin-top:4px;">
+            Targeted drills to build pattern recognition, reaction predictability, and exam speed.
+          </p>
+        </div>
+
+        <!-- 6 Practice Modes Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px;margin-bottom:24px;">
+          <!-- 1. Quick Practice -->
+          <div class="card" style="margin-bottom:0;cursor:pointer;border-top:3px solid var(--primary);" onclick="startPracticeMode('quick')">
+            <div style="font-size:20px;margin-bottom:6px;">⚡</div>
+            <h3 style="font-size:17px;font-weight:800;">Quick Practice</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 12px 0;">10 random questions across all studied topics for rapid warmup.</p>
+            <button class="btn-primary" style="font-size:12.5px;">Launch (10 Qs) →</button>
+          </div>
+
+          <!-- 2. Chapter Practice -->
+          <div class="card" style="margin-bottom:0;cursor:pointer;border-top:3px solid var(--purple);" onclick="startPracticeMode('chapter')">
+            <div style="font-size:20px;margin-bottom:6px;">📖</div>
+            <h3 style="font-size:17px;font-weight:800;">Chapter Practice</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 12px 0;">25 focused questions from a specific chosen chapter.</p>
+            <button class="btn-secondary" style="font-size:12.5px;">Choose Chapter →</button>
+          </div>
+
+          <!-- 3. Topic Practice -->
+          <div class="card" style="margin-bottom:0;cursor:pointer;border-top:3px solid var(--warning);" onclick="startPracticeMode('topic')">
+            <div style="font-size:20px;margin-bottom:6px;">🎯</div>
+            <h3 style="font-size:17px;font-weight:800;">Topic Drill</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 12px 0;">10 surgical questions on a single concept (e.g. Hyperconjugation).</p>
+            <button class="btn-secondary" style="font-size:12.5px;">Select Topic →</button>
+          </div>
+
+          <!-- 4. Weak Area Practice -->
+          <div class="card" style="margin-bottom:0;cursor:pointer;border-top:3px solid var(--danger);" onclick="startPracticeMode('weak')">
+            <div style="font-size:20px;margin-bottom:6px;">🩹</div>
+            <h3 style="font-size:17px;font-weight:800;">Weak Area Practice</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 12px 0;">Smart selection exclusively from topics where accuracy is under 70%.</p>
+            <button class="btn-primary" style="background:var(--danger);font-size:12.5px;">Target Weaknesses →</button>
+          </div>
+
+          <!-- 5. Mixed Organic Drill -->
+          <div class="card" style="margin-bottom:0;cursor:pointer;border-top:3px solid var(--success);" onclick="startPracticeMode('mixed')">
+            <div style="font-size:20px;margin-bottom:6px;">🧪</div>
+            <h3 style="font-size:17px;font-weight:800;">Mixed Organic Drill</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 12px 0;">Full multistep syntheses, reagents, and reaction sequences.</p>
+            <button class="btn-secondary" style="font-size:12.5px;">Start Mixed Drill →</button>
+          </div>
+
+          <!-- 6. Timed Exam Simulation -->
+          <div class="card" style="margin-bottom:0;cursor:pointer;border-top:3px solid var(--text-primary);" onclick="startPracticeMode('exam')">
+            <div style="font-size:20px;margin-bottom:6px;">⏱️</div>
+            <h3 style="font-size:17px;font-weight:800;">Exam Mode</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 12px 0;">Strict timed conditions with negative marking (+4 / -1 JEE scheme).</p>
+            <button class="btn-secondary" style="font-size:12.5px;">Enter Exam Mode →</button>
+          </div>
+        </div>
+
+        <!-- Active Practice Arena Mount -->
+        <div id="practice-arena-mount" class="card" style="display:none;"></div>
+      </main>
+    </div>
+
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav-mount"></nav>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/curriculum-chapters-1-to-25.js"></script>
+  <script src="js/pyqs.js"></script>
+  <script src="js/reactions.js"></script>
+  <script src="js/reagents.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      App.init("practice");
+      // Check query params
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode");
+      if (mode) {
+        startPracticeMode(mode);
+      }
+    });
+
+    let currentSession = null;
+
+    function startPracticeMode(mode) {
+      const arena = document.getElementById("practice-arena-mount");
+      arena.style.display = "block";
+      arena.scrollIntoView({ behavior: 'smooth' });
+
+      // Gather pool of questions from curriculum and PYQs
+      let pool = [];
+      if (window.CHEM_PYQS && window.CHEM_PYQS.QUESTIONS) {
+        pool = pool.concat(window.CHEM_PYQS.QUESTIONS);
+      }
+      if (window.CHEM_CURRICULUM && window.CHEM_CURRICULUM.CHAPTERS) {
+        window.CHEM_CURRICULUM.CHAPTERS.forEach(ch => {
+          if (ch.topics) {
+            ch.topics.forEach(t => {
+              if (t.topicTest) pool = pool.concat(t.topicTest);
+            });
+          }
+          if (ch.chapterTest) pool = pool.concat(ch.chapterTest);
+        });
+      }
+
+      // Shuffle pool
+      pool = pool.sort(() => Math.random() - 0.5);
+      const count = mode === "chapter" ? 25 : 10;
+      const selected = pool.slice(0, Math.min(count, pool.length));
+
+      currentSession = {
+        mode,
+        questions: selected,
+        currentIndex: 0,
+        score: 0,
+        answered: {}
+      };
+
+      renderPracticeQuestion();
+    }
+
+    function renderPracticeQuestion() {
+      const arena = document.getElementById("practice-arena-mount");
+      const s = currentSession;
+      if (!s || !s.questions.length) return;
+
+      const q = s.questions[s.currentIndex];
+      const isLast = s.currentIndex === s.questions.length - 1;
+
+      arena.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-subtle);padding-bottom:10px;margin-bottom:16px;">
+          <span style="font-weight:800;font-size:15px;">Question ${s.currentIndex + 1} of ${s.questions.length}</span>
+          <span class="badge badge-med">Practice: ${s.mode.toUpperCase()}</span>
+        </div>
+
+        <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:14px;white-space:pre-line;">
+          ${q.question}
+        </div>
+
+        <div class="option-list" id="p-opts">
+          ${q.options.map((opt, optIdx) => `
+            <div class="option-item ${s.answered[s.currentIndex] === optIdx ? (optIdx === q.answer ? 'correct' : 'incorrect') : ''}" onclick="selectPracticeOption(${optIdx})">
+              <span class="option-marker">${String.fromCharCode(65 + optIdx)}</span>
+              <span>${opt}</span>
+            </div>
+          `).join("")}
+        </div>
+
+        <div id="p-explanation" style="margin-top:14px;display:${s.answered[s.currentIndex] !== undefined ? 'block' : 'none'};padding:12px;background:var(--bg-card-subtle);border-radius:var(--radius-sm);">
+          <strong>Explanation:</strong> ${q.explanation}
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;">
+          <button class="btn-secondary" onclick="prevPracticeQ()" ${s.currentIndex === 0 ? 'disabled' : ''}>← Previous</button>
+          <button class="btn-primary" onclick="${isLast ? 'finishPracticeSession()' : 'nextPracticeQ()'}">
+            ${isLast ? 'Finish Practice Session' : 'Next Question →'}
+          </button>
+        </div>
+      `;
+    }
+
+    function selectPracticeOption(idx) {
+      const s = currentSession;
+      if (s.answered[s.currentIndex] !== undefined) return; // already answered
+      s.answered[s.currentIndex] = idx;
+      const q = s.questions[s.currentIndex];
+      const isCorrect = idx === q.answer;
+      if (isCorrect) s.score += 1;
+
+      window.CourseStorage.recordQuestionAttempt(q, idx, isCorrect, "practice", "practice-mode");
+      renderPracticeQuestion();
+    }
+
+    function nextPracticeQ() {
+      if (currentSession.currentIndex < currentSession.questions.length - 1) {
+        currentSession.currentIndex += 1;
+        renderPracticeQuestion();
+      }
+    }
+
+    function prevPracticeQ() {
+      if (currentSession.currentIndex > 0) {
+        currentSession.currentIndex -= 1;
+        renderPracticeQuestion();
+      }
+    }
+
+    function finishPracticeSession() {
+      const s = currentSession;
+      const arena = document.getElementById("practice-arena-mount");
+      const pct = Math.round((s.score / s.questions.length) * 100);
+
+      arena.innerHTML = `
+        <div style="text-align:center;padding:24px;">
+          <div style="font-size:36px;margin-bottom:8px;">🎯</div>
+          <h2 style="font-size:22px;font-weight:800;">Practice Session Completed!</h2>
+          <div style="font-size:20px;font-weight:700;color:var(--primary);margin:10px 0;">
+            Score: ${s.score} / ${s.questions.length} (${pct}%)
+          </div>
+          <p style="color:var(--text-secondary);font-size:14px;max-width:450px;margin:0 auto 16px auto;">
+            Every answered question has been recorded into your student analytics. Any missed questions have been safely saved to your Mistake Notebook.
+          </p>
+          <div style="display:flex;justify-content:center;gap:10px;">
+            <button class="btn-secondary" onclick="startPracticeMode('${s.mode}')">Practice Again</button>
+            <a href="dashboard.html" class="btn-primary">Return to Dashboard</a>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
