@@ -39,6 +39,7 @@ window.CourseStorage = (function() {
     },
     dailyGoalMinutes: 45,
     spacedReviews: {}, // topicId -> nextReviewDate (YYYY-MM-DD)
+    notes: {}, // id -> { text, timestamp, title }
     theme: "light"
   };
 
@@ -86,14 +87,15 @@ window.CourseStorage = (function() {
     }
   }
 
-  // Topic Mastery
+  // Topic Mastery (Section 14: 0-39% Not learned, 40-59% Learning, 60-79% Good, 80-89% Strong, 90-100% Mastered)
   function setTopicMastery(topicId, score, total, chapterId, topicNum, topicTitle) {
     const s = getState();
     const pct = total === 0 ? 0 : Math.round((score / total) * 100);
-    let status = "needs-foundation";
-    if (pct >= 85) status = "mastered";
-    else if (pct >= 70) status = "good";
-    else if (pct >= 50) status = "developing";
+    let status = "not-learned";
+    if (pct >= 90) status = "mastered";
+    else if (pct >= 80) status = "strong";
+    else if (pct >= 60) status = "good";
+    else if (pct >= 40) status = "learning";
 
     const prev = s.topicMastery[topicId] || { attempts: 0 };
     s.topicMastery[topicId] = {
@@ -108,7 +110,7 @@ window.CourseStorage = (function() {
       attempts: prev.attempts + 1
     };
 
-    if (pct >= 50) {
+    if (pct >= 60) {
       s.completedTopics[topicId] = true;
       s.todayStats.topicsCompleted += 1;
     }
@@ -116,7 +118,8 @@ window.CourseStorage = (function() {
     // Schedule spaced review
     const now = new Date();
     let daysToAdd = 1;
-    if (status === "mastered") daysToAdd = 3;
+    if (status === "mastered") daysToAdd = 4;
+    else if (status === "strong") daysToAdd = 3;
     else if (status === "good") daysToAdd = 2;
     const reviewDate = new Date(now.getTime() + daysToAdd * 86400000).toISOString().split("T")[0];
     s.spacedReviews[topicId] = reviewDate;
@@ -273,6 +276,63 @@ window.CourseStorage = (function() {
     saveState(s);
   }
 
+  // Student Notes (Section 52)
+  function getNote(id) {
+    const s = getState();
+    return (s.notes && s.notes[id]) ? s.notes[id] : null;
+  }
+
+  function setNote(id, text, title = "") {
+    const s = getState();
+    if (!s.notes) s.notes = {};
+    if (!text || text.trim() === "") {
+      delete s.notes[id];
+    } else {
+      s.notes[id] = {
+        text: text.trim(),
+        title: title || id,
+        timestamp: Date.now()
+      };
+    }
+    saveState(s);
+    return s.notes[id] || null;
+  }
+
+  function getAllNotes() {
+    const s = getState();
+    return s.notes || {};
+  }
+
+  // Settings & Data Management
+  function setDailyGoalMinutes(mins) {
+    const s = getState();
+    s.dailyGoalMinutes = Math.max(10, Math.min(300, parseInt(mins, 10) || 45));
+    saveState(s);
+  }
+
+  function exportData() {
+    const s = getState();
+    return JSON.stringify(s, null, 2);
+  }
+
+  function importData(jsonString) {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (parsed && typeof parsed === "object") {
+        saveState(Object.assign({}, defaultState, parsed));
+        return { success: true };
+      }
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+    return { success: false, error: "Invalid JSON format" };
+  }
+
+  function resetAllData() {
+    localStorage.removeItem(STORAGE_KEY);
+    return defaultState;
+  }
+
   // Init
   checkDateRollover();
 
@@ -288,6 +348,13 @@ window.CourseStorage = (function() {
     isBookmarked,
     saveChapterTestResult,
     getOverallStats,
-    logStudyMinutes
+    logStudyMinutes,
+    getNote,
+    setNote,
+    getAllNotes,
+    setDailyGoalMinutes,
+    exportData,
+    importData,
+    resetAllData
   };
 })();
